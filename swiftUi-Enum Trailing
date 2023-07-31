@@ -1,0 +1,91 @@
+
+
+struct ContentView: View {
+
+@ObservedObject var task = Task()
+@State var fsModal = false
+@State var colorString = "color"
+
+var body: some View {
+
+Text(task.colorString).onTapGesture(perform: {self.fsModal = true}).sheet(isPresented: $fsModal) {
+    FSModal(task: task, fsModal: $fsModal)
+    
+}
+
+}
+
+}
+
+
+enum FontEnum: String, CaseIterable {
+    case black
+    case white
+    case yellow
+    var color: Color {
+        switch self {
+        case .black:
+            return .black
+        case .white:
+            return .white
+        case .yellow:
+            return .yellow
+        }
+    }
+     var colorString: String {
+        switch self {
+        case .black:
+            return "black"
+        case .white:
+            return "write"
+        case .yellow:
+            return "yellow"
+        }
+    }
+}
+
+class Task: ObservableObject {
+    @Published var fontEnum: FontEnum? = .black {
+        didSet {
+            UserDefaults.standard.set((fontEnum ?? .black).rawValue, forKey: "isFS")
+        }
+    }
+    var color: Color {
+        return fontEnum?.color ?? .black
+    }
+    var colorString: String {
+        return fontEnum?.colorString ?? "black"
+    }
+    init() {
+        if let rawValue = UserDefaults.standard.string(forKey: "isFS") {
+            fontEnum = FontEnum(rawValue: rawValue)
+        }
+    }
+}
+
+struct FSModal: View {
+    @ObservedObject var task: Task
+    @Environment(\.dismiss) var dismiss
+    @Binding var fsModal: Bool
+    var body: some View {
+        List(FontEnum.allCases, id: \.self, selection: $task.fontEnum) { color in
+            HStack {
+                Text("\(color.rawValue)")
+                    
+                    .foregroundColor(task.color)
+                Spacer()
+                if color == task.fontEnum {
+                    Text("✓")
+                        .foregroundColor(task.color)
+                }
+            }.contentShape(Rectangle()).onTapGesture(perform: {fsUserDefaults()})
+            .listRowBackground(Color.gray)
+        }
+        .background(.gray)
+        .scrollContentBackground(.hidden)
+    }
+    func fsUserDefaults() {
+        UserDefaults.standard.set((task.fontEnum ?? .black).rawValue, forKey: "isFS")
+        dismiss()
+    }
+}
